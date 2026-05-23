@@ -1,5 +1,5 @@
 <?php
-// auth/login.php - Professional Login Page with Back Arrow & Bottom Navigation
+// auth/login.php - Professional Login Page with Fixed SweetAlert
 session_start();
 
 // Include required files
@@ -39,6 +39,8 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['logged_in']) && $_SESSION['l
 }
 
 $error_message = '';
+$login_success = false;
+$redirect_url = '';
 
 // Handle login form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
@@ -107,8 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
                 
                 $_SESSION['login_success'] = "Welcome back, " . $user['full_name'] . "!";
                 
-                // Redirect based on role
-                $redirect_url = '';
+                // Set redirect URL based on role
                 switch($user['role']) {
                     case 'super_admin':
                         $redirect_url = '../admin/dashboard.php';
@@ -133,8 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
                         break;
                 }
                 
-                header("Location: " . $redirect_url);
-                exit();
+                $login_success = true;
                 
             } else {
                 $error_message = "Invalid email/phone or password.";
@@ -149,6 +149,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             }
         }
     }
+}
+
+// If login successful, redirect
+if ($login_success) {
+    header("Location: " . $redirect_url);
+    exit();
 }
 
 // Generate CSRF token
@@ -339,7 +345,6 @@ if (empty($_SESSION['csrf_token'])) {
 
 <!-- Main Content -->
 <main class="flex-grow flex items-center justify-center px-margin-mobile md:px-lg py-xl relative overflow-hidden">
-<!-- Abstract Tanzanian Themed Background -->
 <div class="absolute inset-0 pattern-bg pointer-events-none"></div>
 <div class="absolute top-0 right-0 w-1/3 h-full bg-secondary-container opacity-10 -skew-x-12 translate-x-1/4 z-0"></div>
 <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-primary opacity-5 rounded-full blur-3xl z-0"></div>
@@ -374,9 +379,7 @@ if (empty($_SESSION['csrf_token'])) {
 <!-- Right Side: Login Card -->
 <div class="lg:col-span-5 w-full">
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xl p-xl md:p-xxl relative overflow-hidden">
-<!-- Accent Gold Bar at top -->
 <div class="absolute top-0 left-0 right-0 h-1.5 bg-secondary-container"></div>
-<!-- Mobile Logo (Visible on Mobile Only) -->
 <div class="lg:hidden flex flex-col items-center mb-xl">
 <div class="w-16 h-16 bg-primary rounded flex items-center justify-center mb-sm shadow-md">
 <span class="material-symbols-outlined text-on-primary text-4xl">account_balance</span>
@@ -388,31 +391,18 @@ if (empty($_SESSION['csrf_token'])) {
 <p class="font-body-md text-body-md text-on-surface-variant">Enter your portal credentials to proceed.</p>
 </div>
 
-<!-- Error Message Area (Hidden initially, shown via SweetAlert) -->
-<?php if (!empty($error_message)): ?>
-<input type="hidden" id="php-error" value="<?php echo htmlspecialchars($error_message); ?>">
-<?php endif; ?>
-
 <form method="POST" action="" id="loginForm" class="space-y-lg">
-<!-- CSRF Token -->
 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
 
-<!-- Email/Phone Field -->
 <div class="space-y-xs">
 <label class="font-label-md text-label-md text-on-surface-variant block" for="email">Email Address or Phone Number</label>
 <div class="relative">
 <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">mail</span>
 <input class="w-full h-[52px] pl-[48px] pr-md border border-outline rounded-lg bg-surface-bright text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
-       id="email" 
-       name="email" 
-       placeholder="e.g., admin@hcs.gov.tz or 0712345678" 
-       required="" 
-       type="text"
-       value="admin@hcs.go.tz">
+       id="email" name="email" placeholder="e.g., admin@hcs.gov.tz or 0712345678" required type="text">
 </div>
 </div>
 
-<!-- Password Field -->
 <div class="space-y-xs">
 <div class="flex justify-between items-center">
 <label class="font-label-md text-label-md text-on-surface-variant" for="password">Password</label>
@@ -421,19 +411,13 @@ if (empty($_SESSION['csrf_token'])) {
 <div class="relative">
 <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-outline">lock</span>
 <input class="w-full h-[52px] pl-[48px] pr-[48px] border border-outline rounded-lg bg-surface-bright text-on-surface font-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
-       id="password" 
-       name="password" 
-       placeholder="••••••••" 
-       required="" 
-       type="password"
-       value="admin123">
+       id="password" name="password" placeholder="••••••••" required type="password">
 <button type="button" id="togglePassword" class="absolute right-md top-1/2 -translate-y-1/2 text-outline hover:text-primary transition">
 <span class="material-symbols-outlined">visibility_off</span>
 </button>
 </div>
 </div>
 
-<!-- Remember Me -->
 <div class="flex items-center">
 <label class="flex items-center gap-2 cursor-pointer">
 <input type="checkbox" name="remember_me" class="w-4 h-4 text-primary border-outline rounded focus:ring-primary">
@@ -441,7 +425,6 @@ if (empty($_SESSION['csrf_token'])) {
 </label>
 </div>
 
-<!-- Login Button -->
 <button type="submit" name="login" id="loginBtn" 
         class="w-full h-[52px] bg-primary text-on-primary font-label-md rounded-lg flex items-center justify-center gap-sm hover:bg-primary-container active:scale-[0.98] transition-all shadow-md">
 <span id="btnText">Login to Portal</span>
@@ -455,7 +438,6 @@ if (empty($_SESSION['csrf_token'])) {
 <div class="flex-grow border-t border-outline-variant"></div>
 </div>
 
-<!-- Secondary Action -->
 <div class="text-center">
 <p class="font-body-sm text-body-sm text-on-surface-variant mb-sm">Are you a new claimant?</p>
 <a href="register.php" class="inline-flex items-center gap-xs font-label-md text-primary hover:text-primary-container group transition-all">
@@ -469,7 +451,6 @@ if (empty($_SESSION['csrf_token'])) {
 </div>
 </main>
 
-<!-- Secure Footer -->
 <footer class="bg-surface-container-high py-md border-t border-outline-variant">
 <div class="max-w-[1100px] mx-auto px-margin-mobile flex flex-col md:flex-row justify-between items-center gap-md">
 <div class="flex items-center gap-sm">
@@ -489,34 +470,27 @@ if (empty($_SESSION['csrf_token'])) {
 </div>
 </footer>
 
-<!-- BOTTOM NAVIGATION BAR - Mobile Only (Same as register page) -->
 <nav class="bottom-nav fixed bottom-0 left-0 right-0 bg-surface border-t border-outline-variant flex justify-around items-center px-2 py-1 shadow-lg z-50 md:hidden" style="padding-bottom: env(safe-area-inset-bottom, 0.5rem);">
-    
     <a href="../index.php" class="bottom-nav-item flex flex-col items-center justify-center py-1 px-3 rounded-lg active:bg-surface-container transition-all">
         <span class="material-symbols-outlined text-on-surface-variant text-2xl">home</span>
         <span class="font-label-sm text-label-sm text-on-surface-variant text-xs">Home</span>
     </a>
-    
     <a href="../track-claim.php" class="bottom-nav-item flex flex-col items-center justify-center py-1 px-3 rounded-lg active:bg-surface-container transition-all">
         <span class="material-symbols-outlined text-on-surface-variant text-2xl">track_changes</span>
         <span class="font-label-sm text-label-sm text-on-surface-variant text-xs">Track</span>
     </a>
-    
     <a href="../notices.php" class="bottom-nav-item flex flex-col items-center justify-center py-1 px-3 rounded-lg active:bg-surface-container transition-all">
         <span class="material-symbols-outlined text-on-surface-variant text-2xl">campaign</span>
         <span class="font-label-sm text-label-sm text-on-surface-variant text-xs">Notices</span>
     </a>
-    
     <a href="register.php" class="bottom-nav-item flex flex-col items-center justify-center py-1 px-3 rounded-lg active:bg-surface-container transition-all">
         <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">person_add</span>
         <span class="font-label-sm text-label-sm text-primary text-xs font-bold">Register</span>
     </a>
-    
     <a href="login.php" class="bottom-nav-item flex flex-col items-center justify-center py-1 px-3 rounded-lg active:bg-surface-container transition-all">
         <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">login</span>
         <span class="font-label-sm text-label-sm text-primary text-xs font-bold">Login</span>
     </a>
-    
 </nav>
 
 <script>
@@ -533,19 +507,7 @@ if (empty($_SESSION['csrf_token'])) {
         });
     }
     
-    // Check for PHP error
-    const phpError = document.getElementById('php-error');
-    if (phpError) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Login Failed',
-            text: phpError.value,
-            confirmButtonColor: '#006e2c',
-            confirmButtonText: 'Try Again'
-        });
-    }
-    
-    // Form submission with SweetAlert
+    // Form submission with SweetAlert - FIXED VERSION
     const loginForm = document.getElementById('loginForm');
     const loginBtn = document.getElementById('loginBtn');
     const btnText = document.getElementById('btnText');
@@ -592,82 +554,82 @@ if (empty($_SESSION['csrf_token'])) {
             btnIcon.classList.add('hidden');
             btnSpinner.classList.remove('hidden');
             
-            // Submit form via AJAX
-            try {
-                const formData = new URLSearchParams({
-                    login: '1',
-                    csrf_token: document.querySelector('input[name="csrf_token"]').value,
-                    email: email,
-                    password: password,
-                    remember_me: rememberMe ? 'on' : ''
-                });
-                
-                const response = await fetch(window.location.href, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: formData
-                });
-                
-                const text = await response.text();
-                
-                // Check if redirected (successful login)
-                if (response.redirected || text.includes('dashboard') || text.includes('Location')) {
-                    await Swal.fire({
-                        icon: 'success',
-                        title: 'Welcome!',
-                        text: 'Redirecting to your dashboard...',
-                        timer: 1500,
-                        showConfirmButton: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
-                    
-                    window.location.href = response.url || '../dashboard.php';
-                } else if (text.includes('error_message') || text.includes('Invalid') || text.includes('inactive')) {
-                    let errorMsg = 'Invalid email/phone or password.';
-                    const errorMatch = text.match(/error_message[^>]*>([^<]+)</);
-                    if (errorMatch) {
-                        errorMsg = errorMatch[1];
-                    }
-                    
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Login Failed',
-                        text: errorMsg,
-                        confirmButtonColor: '#006e2c',
-                        confirmButtonText: 'Try Again'
-                    });
-                    
-                    // Reset button
-                    loginBtn.disabled = false;
-                    loginBtn.classList.remove('opacity-70', 'cursor-not-allowed');
-                    btnText.classList.remove('hidden');
-                    btnIcon.classList.remove('hidden');
-                    btnSpinner.classList.add('hidden');
-                } else {
-                    throw new Error('Login failed');
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'System Error',
-                    text: 'Network error occurred. Please check your connection and try again.',
-                    confirmButtonColor: '#006e2c'
-                });
-                
-                // Reset button
-                loginBtn.disabled = false;
-                loginBtn.classList.remove('opacity-70', 'cursor-not-allowed');
-                btnText.classList.remove('hidden');
-                btnIcon.classList.remove('hidden');
-                btnSpinner.classList.add('hidden');
+            // Submit form normally (not AJAX to avoid detection issues)
+            // Create a temporary form to submit
+            const tempForm = document.createElement('form');
+            tempForm.method = 'POST';
+            tempForm.action = window.location.href;
+            
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = document.querySelector('input[name="csrf_token"]').value;
+            tempForm.appendChild(csrfInput);
+            
+            const loginInput = document.createElement('input');
+            loginInput.type = 'hidden';
+            loginInput.name = 'login';
+            loginInput.value = '1';
+            tempForm.appendChild(loginInput);
+            
+            const emailInput = document.createElement('input');
+            emailInput.type = 'hidden';
+            emailInput.name = 'email';
+            emailInput.value = email;
+            tempForm.appendChild(emailInput);
+            
+            const passInput = document.createElement('input');
+            passInput.type = 'hidden';
+            passInput.name = 'password';
+            passInput.value = password;
+            tempForm.appendChild(passInput);
+            
+            if (rememberMe) {
+                const rememberInput = document.createElement('input');
+                rememberInput.type = 'hidden';
+                rememberInput.name = 'remember_me';
+                rememberInput.value = 'on';
+                tempForm.appendChild(rememberInput);
             }
+            
+            document.body.appendChild(tempForm);
+            
+            // Show success message before submit (will be replaced by page redirect)
+            Swal.fire({
+                icon: 'success',
+                title: 'Please wait...',
+                text: 'Verifying your credentials',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            tempForm.submit();
         });
     }
+    
+    // Check for PHP error message from URL parameter or session
+    <?php if (!empty($error_message)): ?>
+    Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        text: '<?php echo addslashes($error_message); ?>',
+        confirmButtonColor: '#006e2c',
+        confirmButtonText: 'Try Again'
+    });
+    <?php endif; ?>
+    
+    // Check for success message from logout
+    <?php if (isset($_SESSION['logout_message'])): ?>
+    Swal.fire({
+        icon: 'success',
+        title: 'Logged Out',
+        text: '<?php echo $_SESSION['logout_message']; ?>',
+        confirmButtonColor: '#006e2c',
+        timer: 3000
+    });
+    <?php unset($_SESSION['logout_message']); endif; ?>
     
     // Input focus effects
     const inputs = document.querySelectorAll('input');

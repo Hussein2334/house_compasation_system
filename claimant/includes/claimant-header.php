@@ -1,20 +1,33 @@
 <?php
-// admin/includes/admin-header.php - Admin Header Component
-// This file contains the top navigation bar for admin pages
+// claimant/includes/claimant-header.php - Claimant Header Component
 
-// Check if user is logged in and is admin
+// Check if user is logged in and is claimant
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header("Location: ../auth/login.php");
+    header("Location: ../../auth/login.php");
     exit();
 }
 
-if ($_SESSION['role'] !== 'super_admin') {
+if ($_SESSION['role'] !== 'claimant') {
     header("Location: ../../dashboard.php");
     exit();
 }
 
 // Get current page name for active state
 $current_page = basename($_SERVER['PHP_SELF']);
+
+// Get database connection for notifications
+$conn = getDB();
+
+// Get unread notifications count
+$unread_count = 0;
+if (isset($_SESSION['user_id'])) {
+    $unread_query = "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0";
+    $unread_stmt = mysqli_prepare($conn, $unread_query);
+    mysqli_stmt_bind_param($unread_stmt, "i", $_SESSION['user_id']);
+    mysqli_stmt_execute($unread_stmt);
+    $unread_result = mysqli_stmt_get_result($unread_stmt);
+    $unread_count = mysqli_fetch_assoc($unread_result)['count'] ?? 0;
+}
 ?>
 <!DOCTYPE html>
 <html class="light" lang="sw">
@@ -22,7 +35,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
 <meta name="theme-color" content="#006e2c"/>
-<title><?php echo $page_title ?? 'Admin Dashboard'; ?> | HCS - House Compensation System</title>
+<title><?php echo $page_title ?? 'Claimant Dashboard'; ?> | HCS - House Compensation System</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -129,13 +142,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 padding-bottom: env(safe-area-inset-bottom);
             }
         }
-        .animate-bounce {
-            animation: bounce 1s infinite;
-        }
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
     </style>
 </head>
 <body class="bg-surface font-body-md text-on-surface flex flex-col md:flex-row h-screen overflow-hidden">
@@ -144,25 +150,27 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <div class="fixed inset-0 bg-black/50 z-40 hidden md:hidden" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <?php
-// Include sidebar
-require_once __DIR__ . '/admin-sidebar.php';
+// Include claimant sidebar
+require_once __DIR__ . '/claimant-sidebar.php';
 ?>
 
 <!-- Main Content Area -->
 <div class="flex-1 flex flex-col h-full overflow-hidden">
     
-    <!-- Admin Header (Top Navigation) -->
+    <!-- Claimant Header (Top Navigation) -->
     <header class="flex items-center justify-between px-md md:px-lg h-16 bg-surface-container-lowest border-b border-outline-variant shrink-0 z-30">
         <div class="flex items-center gap-md">
             <button class="material-symbols-outlined cursor-pointer md:hidden text-primary" onclick="toggleSidebar()">menu</button>
-            <h1 class="font-headline-md text-primary font-bold truncate"><?php echo $page_heading ?? 'Admin Dashboard'; ?></h1>
+            <h1 class="font-headline-md text-primary font-bold truncate"><?php echo $page_heading ?? 'Claimant Dashboard'; ?></h1>
         </div>
         
         <div class="flex items-center gap-md">
             <!-- Notifications -->
             <div class="relative cursor-pointer hover:bg-surface-container-low p-2 rounded-full hidden sm:block" onclick="showNotifications()">
                 <span class="material-symbols-outlined text-primary">notifications</span>
-                <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-error rounded-full border-2 border-white"></span>
+                <?php if ($unread_count > 0): ?>
+                <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-error rounded-full border-2 border-white animate-pulse"></span>
+                <?php endif; ?>
             </div>
             
             <div class="h-8 w-[1px] bg-outline-variant mx-sm hidden sm:block"></div>
@@ -181,9 +189,13 @@ require_once __DIR__ . '/admin-sidebar.php';
                         <span class="material-symbols-outlined text-sm">account_circle</span>
                         Profile
                     </a>
-                    <a href="settings.php" class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-surface-container-low">
-                        <span class="material-symbols-outlined text-sm">settings</span>
-                        Settings
+                    <a href="my-claims.php" class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-surface-container-low">
+                        <span class="material-symbols-outlined text-sm">description</span>
+                        Madai Yangu
+                    </a>
+                    <a href="my-payments.php" class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-surface-container-low">
+                        <span class="material-symbols-outlined text-sm">payments</span>
+                        Malipo Yangu
                     </a>
                     <hr class="my-1">
                     <a href="../auth/logout.php" class="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
